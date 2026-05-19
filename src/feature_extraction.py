@@ -1,6 +1,8 @@
 import re
 from urllib.parse import urlparse
 import tldextract
+from collections import Counter
+from math import log2
 
 def url_length(url):
     return len(url)
@@ -28,9 +30,10 @@ def extract_url(url):
              ]
     return parts
 
-
-url1 = "facebook.com"
-url2 = "http://www.ikenmijnkunst.nl/index.php/exposities/exposities-2006"
-url3 ="http://www.habbocreditos4.t83.net/#/hc-y-vip/4553149448"
-url4 = "http:faceb00k.com"
-print(extract_url(url4))
+def Shannon_entropy(data):
+    if not data:
+        return 0
+    char_count = Counter(data)
+    l = len(data)
+    s = sum(c*log2(c) for c in char_count.values())
+    return log2(l) - s/l
