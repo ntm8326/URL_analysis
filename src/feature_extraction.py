@@ -3,9 +3,15 @@ from urllib.parse import urlparse
 import tldextract
 from collections import Counter
 from math import log2
-
-def url_length(url):
-    return len(url)
+SCHEME = 0
+NETLOC = 1
+SUBDOMAIN = 2
+DOMAIN = 3
+SUFFIX = 4
+PATH = 5
+PARAMS = 6
+QUERY = 7
+FRAGMENT = 8
 
 def extract_url(url):
     url = str(url).strip()
@@ -16,7 +22,6 @@ def extract_url(url):
         temp_url = "//" + url
         parsed_working = urlparse(temp_url)
     else:
-
         parsed_working = parsed_origin
     parts = [parsed_origin.scheme,
              parsed_working.netloc,
@@ -37,3 +42,25 @@ def Shannon_entropy(data):
     l = len(data)
     s = sum(c*log2(c) for c in char_count.values())
     return log2(l) - s/l
+
+def has_part(parts, index):
+    if not parts[index]:
+        return 0
+    return 1
+
+def part_length(parts, index):
+    return len(parts[index])
+
+def part_entropy(parts, index):
+    return Shannon_entropy(parts[index])
+
+
+
+url1 = "http://www.lebensmittel-ueberwachung.de/index.php/aktuelles.1"
+parts1 = extract_url(url1)
+print(parts1)
+print(has_part(parts1, SCHEME))
+print(has_part(parts1, FRAGMENT))
+print(parts1[NETLOC])
+print(part_entropy(parts1, NETLOC))
+print(part_length(parts1, FRAGMENT))
