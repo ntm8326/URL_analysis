@@ -4,3 +4,4 @@ jupyter
 tldextract
 urllib
 parse
+rapidfuzz

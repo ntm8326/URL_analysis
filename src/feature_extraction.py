@@ -40,7 +40,8 @@ SUSPICIOUS_KEYWORDS = {
     'webmail', 'outlook', 'office365', 'cpanel',
 }
 url_structure = [SCHEME, NETLOC, PATH, QUERY, FRAGMENT]
-
+def url_length(url : str) -> int:
+    return len(url)
 def fully_decode(data : str) -> str:
     if not data:
         return ""
@@ -102,38 +103,42 @@ def digit_ratio(data : str) -> float:
     if not data:
         return 0.0
     return sum(c.isdigit() for c in data) / len(data)
-def dot_count(data : str) -> int:
-    if not data:
+def dot_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '.')
-def hyphen_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '.')
+def hyphen_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '-')
-def hash_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '-')
+def hash_count(parts :  list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '#')
-def percent_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '#')
+def percent_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '%')
-def slash_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '%')
+def slash_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '/')
-def at_sign_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '/')
+def at_sign_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '@')
-def ampersand_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '@')
+def ampersand_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '&')
-def equal_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '&')
+def equal_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '=')
+    return sum(1 for c in parts[index] if c == '=')
+def question_count(parts : list, index : int) -> int:
+    if not parts[index]:
+        return 0
+    return sum(1 for c in parts[index] if c == '?')
 def strange_char_count(data : str) -> int:
     if not data:
         return 0
@@ -214,5 +219,47 @@ def max_consecutive_char(data : str) -> int:
         else:
             current_consecutive = 1
     return max_consecutive
+def features_extraction(url : str) -> list:
+    if not url:
+        return []
+    extracted = extract_url(url)
+    #nhóm 1: part có tồn tại hay không
+    number_of_part = part_count(extracted)
+    has_scheme = has_part(extracted, SCHEME)
+    has_netloc = has_part(extracted, NETLOC)
+    has_path = has_part(extracted, PATH)
+    has_params = has_part(extracted, PARAMS)
+    has_query = has_part(extracted, QUERY)
+    has_fragment = has_part(extracted, FRAGMENT)
+    has_username = has_part(extracted, USERNAME)
+    has_password = has_part(extracted, PASSWORD)
+    has_port = has_part(extracted, PORT)
+    has_subdomain = has_part(extracted, SUBDOMAIN)
+    has_domain = has_part(extracted, DOMAIN)
+    has_suffix = has_part(extracted, SUFFIX)
+
+    #nhóm 2:parts length
+    netloc_length = part_length(extracted, NETLOC)
+    path_length = part_length(extracted, PATH)
+    query_length = part_length(extracted, QUERY)
+    fragment_length = part_length(extracted, FRAGMENT)
+    subdomain_length = part_length(extracted, SUBDOMAIN)
+    domain_length = part_length(extracted, DOMAIN)
+
+    # nhom 3: entropy
+    url_entropy = Shannon_entropy(url)
+    netloc_entropy = part_entropy(extracted, NETLOC)
+    path_entropy = part_entropy(extracted, PATH)
+    query_entropy = path_entropy(extracted, QUERY)
+    subdomain_entropy = path_entropy(extracted, SUBDOMAIN)
+    domain_entropy = path_entropy(extracted, DOMAIN)
+
+    #nhom 4: ky tu dac biet
 
 
+
+
+
+domain_test = 'paaypal.com'
+path = r'C:\Users\AD\Downloads\domain1.txt'
+print(levenshtein(domain_test, path))
