@@ -39,6 +39,24 @@ SUSPICIOUS_KEYWORDS = {
     # webmail
     'webmail', 'outlook', 'office365', 'cpanel',
 }
+SUSPICIOUS_TLDS = {
+    'tk', 'ml', 'ga', 'cf', 'gq', 'xyz', 'top', 'click', 'link',
+    'win', 'download', 'racing', 'vip', 'club', 'online', 'site',
+    'live', 'fun', 'space', 'pw', 'christmas', 'cyou', 'rest',
+    'icu', 'cfd', 'hair', 'makeup', 'monster', 'quest', 'skin',
+}
+SHORTENERS = {
+    'bit.ly', 'goo.gl', 'tinyurl.com', 't.co', 'ow.ly', 'is.gd',
+    'cutt.ly', 'rebrand.ly', 'bit.do', 'v.gd', 'short.to', 'tiny.cc'
+}
+FREE_HOSTING = {
+    'vercel.app', 'netlify.app', 'github.io', 'glitch.me',
+    'replit.dev', 'repl.co', '000webhostapp.com', 'web.app',
+    'firebaseapp.com', 'pages.dev', 'surge.sh', 'onrender.com',
+    'railway.app', 'fly.dev', 'cyclic.app'
+}
+PROTOCOLS = {'HTTP', 'HTTPS', 'FTP', 'FTPS'}
+PORTS = {80, 443, 8080, 21}
 url_structure = [SCHEME, NETLOC, PATH, QUERY, FRAGMENT]
 def url_length(url : str) -> int:
     return len(url)
@@ -139,7 +157,7 @@ def question_count(parts : list, index : int) -> int:
     if not parts[index]:
         return 0
     return sum(1 for c in parts[index] if c == '?')
-def strange_char_count(data : str) -> int:
+def strange_char_count(data : list, index : int) -> int:
     if not data:
         return 0
     valid_pattern = r'[^a-zA-Z0-9\-\._~:/\?#\[\]@!\$&\'\(\)\*\+,;=%]'
@@ -219,10 +237,65 @@ def max_consecutive_char(data : str) -> int:
         else:
             current_consecutive = 1
     return max_consecutive
-def features_extraction(url : str) -> list:
+#moi add 30/5
+def _is_uuid_path(data: list) -> int:
+    """Phát hiện path chứa UUID (dấu hiệu C2 server / malware callback).
+    Ví dụ: /ba1019ee-a048-4bd5-a90d-1fc5da2b8696
+    """
+    uuid_pattern = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+    return 1 if re.search(uuid_pattern, data[PATH].lower()) else 0
+def is_shortened(data : list) -> int:
+    if not data[DOMAIN] or not data[SUFFIX]:
+        return 0
+    host_domain = data[DOMAIN]+'.'+data[SUFFIX]
+    if host_domain in SHORTENERS or data[DOMAIN] in SHORTENERS:
+        return 1
+    return 0
+def has_download_param(data : list) -> int:
+    if not data:
+        return 0
+    if len(data[PATH]) > 7 or len(data[QUERY]) > 7:
+        if ('download' in data[QUERY].lower() or
+            'download' in data[PATH].lower() or
+            'install' in data[PATH].lower()):
+            return 1
+    return 0
+def has_suspicious_port(data : list) -> int:
+    if not data[PORT]:
+        return 0
+    if data[PORT] not in PORTS:
+        return 1
+    return 0
+def is_free_hosting(data : list) -> int:
+    if not data:
+        return 0
+    for h in FREE_HOSTING:
+        if data[DOMAIN].endswith(h):
+            return 1
+    return 0
+def free_hosting_download(data : list) -> int:
+    if is_free_hosting(data) and has_download_param(data):
+        return 1
+    return 0
+def has_unicode(data : list) -> int:
+    if not data:
+        return 0
+    host_domain = data[DOMAIN]+'.'+data[SUFFIX]
+    if any(ord(c) > 127 for c in host_domain):
+        return 1
+    return 0
+def has_punycode(data : list) -> int:
+    if not data:
+        return 0
+    host_domain = data[DOMAIN]+'.'+data[SUFFIX]
+    if "xn--" in host_domain:
+        return 1
+    return 0
+def features_extraction(url : str, whitelist : str) -> list:
     if not url:
         return []
     extracted = extract_url(url)
+    domain = extracted[DOMAIN]+'.'+extracted[SUFFIX]
     #nhóm 1: part có tồn tại hay không
     number_of_part = part_count(extracted)
     has_scheme = has_part(extracted, SCHEME)
@@ -250,16 +323,59 @@ def features_extraction(url : str) -> list:
     url_entropy = Shannon_entropy(url)
     netloc_entropy = part_entropy(extracted, NETLOC)
     path_entropy = part_entropy(extracted, PATH)
-    query_entropy = path_entropy(extracted, QUERY)
-    subdomain_entropy = path_entropy(extracted, SUBDOMAIN)
-    domain_entropy = path_entropy(extracted, DOMAIN)
+    query_entropy = part_entropy(extracted, QUERY)
+    subdomain_entropy = part_entropy(extracted, SUBDOMAIN)
+    domain_entropy = part_entropy(extracted, DOMAIN)
 
     #nhom 4: ky tu dac biet
+    number_of_subdomain = dot_count(extracted, SUBDOMAIN)
+    hyphen_in_subdomain = hyphen_count(extracted, SUBDOMAIN)
+    hyphen_in_domain = hyphen_count(extracted, DOMAIN)
+    unicode = has_unicode(extracted)
+    punycode = has_punycode(extracted)
+    at_sign_in_netloc = at_sign_count(extracted, NETLOC)
+    slash_in_path = slash_count(extracted, PATH)
+    dot_in_path = dot_count(extracted, PATH)
+    strange_in_query = strange_char_count(extracted, QUERY)
+    equal_in_query = equal_count(extracted, QUERY)
+    ampersand_in_query = ampersand_count(extracted, QUERY)
+
+
+    #nhom 5: lexical/string
+    normalized_levenshtein_domain = levenshtein(domain, whitelist)
+    normalized_levenshtein_subdomain = levenshtein(extracted[SUBDOMAIN], whitelist)
+    random_domain_check = consonant_ratio(extracted[DOMAIN])
+    random_subdomain_check = consonant_ratio(extracted[SUBDOMAIN])
+    number_ratio_domain = digit_ratio(extracted[DOMAIN])
+    number_ratio_subdomain = digit_ratio(extracted[SUBDOMAIN])
+    repeated_domain_check = char_repeated_ratio(extracted[DOMAIN])
+    repeated_path_check = char_repeated_ratio(extracted[PATH])
+    repeated_url_check = char_repeated_ratio(url)
+    longest_repeated_chain = max_consecutive_char(url)
+    ip_domain = is_ip(extracted[DOMAIN])
+    suspicious_key_domain = has_suspicious_keyword(extracted[DOMAIN])
+    suspicious_key_subdomain = has_suspicious_keyword((extracted[SUBDOMAIN]))
+    suspicious_key_path = has_suspicious_keyword(extracted[PATH])
+    suspicious_key_query = has_suspicious_keyword(extracted[QUERY])
+    shortened = is_shortened(extracted)
+
+
+    #nhom 6: nhom con lai
+    has_uuid_path = _is_uuid_path(extracted)
+    download_param = has_download_param(extracted)
+    free_host = is_free_hosting(extracted)
+    free_host_download = free_hosting_download(extracted)
+
+    return[]
 
 
 
 
 
-domain_test = 'paaypal.com'
+domain_test = 'http://babal.net/downloads_details/497/%D9%83%D8%A7%D8%B8%D9%85-%D8%A7%D9%84%D8%B3%D8%A7%D9%87%D8%B1---%D8%A7%D9%86%D8%AA-%D8%A7%D9%84%D8%AE%D8%A7%D8%B3%D8%B1'
+domain_test_1 = 'paypal.com'
 path = r'C:\Users\AD\Downloads\domain1.txt'
-print(levenshtein(domain_test, path))
+parts1 = extract_url(domain_test)
+print(parts1)
+print(has_download_param(parts1))
+print(_is_uuid_path(parts1))
