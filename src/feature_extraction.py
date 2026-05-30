@@ -157,11 +157,17 @@ def question_count(parts : list, index : int) -> int:
     if not parts[index]:
         return 0
     return sum(1 for c in parts[index] if c == '?')
-def strange_char_count(data : list, index : int) -> int:
-    if not data:
+
+
+STRANGE_CHAR_PATTERN = re.compile(r'[^a-zA-Z0-9\-\._~:/\?#\[\]@!\$&\'\(\)\*\+,;=%]')
+
+def strange_char_count(data: list, index: int) -> int:
+    if not data or index >= len(data):
         return 0
-    valid_pattern = r'[^a-zA-Z0-9\-\._~:/\?#\[\]@!\$&\'\(\)\*\+,;=%]'
-    strange_chars = re.findall(valid_pattern, data)
+    part = data[index]
+    if not part:
+        return 0
+    strange_chars = STRANGE_CHAR_PATTERN.findall(part)
     return len(strange_chars)
 def is_ip(data : str) -> int:
     try:
@@ -169,10 +175,8 @@ def is_ip(data : str) -> int:
         return 1
     except ValueError:
         return 0
-def levenshtein(data : str, file_whitelist : str) -> dict:
-    threshold = max(1, floor(len(data)/7))
-    highest_score = 0
-    most_similar_domain = ""
+def load_and_preprocess_whitelist(file_whitelist : str) -> list:
+    processed_list = []
     try:
         with open(file_whitelist, 'r', encoding = 'utf-8') as file:
             for line in file:
@@ -181,25 +185,29 @@ def levenshtein(data : str, file_whitelist : str) -> dict:
                     continue
                 extracted = extract_url(check_domain)
                 host_domain = f"{extracted[DOMAIN]}.{extracted[SUFFIX]}"
-                len_diff = abs(len(data) - len(host_domain))
-                if len_diff > threshold:
-                    continue
-                distain = Levenshtein.distance(data, host_domain, score_cutoff = threshold)
-                if distain <= threshold:
-                    current_score = Levenshtein.normalized_similarity(data, host_domain)
-                    if current_score > highest_score:
-                        highest_score = current_score
-                        most_similar_domain = host_domain
-
-        return {
-            "normalized similarity": highest_score,
-            "domain": most_similar_domain
-        }
+                processed_list.append(host_domain)
     except FileNotFoundError:
-        return {
-            "normalized similarity": 0.0,
-            "domain": ""
-        }
+        print("File not found")
+    return list(set(processed_list))
+def levenshtein(data : str, preprocessed_list : list) -> dict:
+    threshold = max(1, floor(len(data) / 7))
+    highest_score = 0
+    most_similar_domain = ""
+    data_len = len(data)
+    for host_domain in preprocessed_list:
+        len_diff = abs(data_len - len(host_domain))
+        if len_diff > threshold:
+            continue
+        dist = Levenshtein.distance(data, host_domain, score_cutoff=threshold)
+        if dist <= threshold:
+            current_score = Levenshtein.normalized_similarity(data, host_domain)
+            if current_score > highest_score:
+                highest_score = current_score
+                most_similar_domain = host_domain
+    return {
+        "normalized_similarity": highest_score,
+        "domain": most_similar_domain
+    }
 def part_count(extracted : list) -> int:
     count = 0
     for part in url_structure:
@@ -291,7 +299,7 @@ def has_punycode(data : list) -> int:
     if "xn--" in host_domain:
         return 1
     return 0
-def features_extraction(url : str, whitelist : str) -> list:
+def features_extraction(url : str, whitelist : list) -> list:
     if not url:
         return []
     extracted = extract_url(url)
@@ -342,8 +350,8 @@ def features_extraction(url : str, whitelist : str) -> list:
 
 
     #nhom 5: lexical/string
-    normalized_levenshtein_domain = levenshtein(domain, whitelist)
-    normalized_levenshtein_subdomain = levenshtein(extracted[SUBDOMAIN], whitelist)
+    normalized_levenshtein_domain = levenshtein(domain, whitelist).get("normalized_similarity")
+    normalized_levenshtein_subdomain = levenshtein(extracted[SUBDOMAIN], whitelist).get("normalized_similarity")
     random_domain_check = consonant_ratio(extracted[DOMAIN])
     random_subdomain_check = consonant_ratio(extracted[SUBDOMAIN])
     number_ratio_domain = digit_ratio(extracted[DOMAIN])
@@ -366,7 +374,18 @@ def features_extraction(url : str, whitelist : str) -> list:
     free_host = is_free_hosting(extracted)
     free_host_download = free_hosting_download(extracted)
 
-    return[]
+    features = [number_of_part, has_scheme, has_netloc, has_path, has_params, has_query, has_fragment,
+                has_username, has_password, has_port, has_subdomain, has_domain, has_suffix,
+                netloc_length, path_length, query_length, fragment_length, subdomain_length, domain_length,
+                url_entropy, netloc_entropy, path_entropy, query_entropy, subdomain_entropy, domain_entropy,
+                number_of_subdomain, hyphen_in_subdomain, hyphen_in_domain, unicode, punycode, at_sign_in_netloc,
+                slash_in_path, dot_in_path, strange_in_query, equal_in_query, ampersand_in_query,
+                normalized_levenshtein_domain, normalized_levenshtein_subdomain, random_domain_check, random_subdomain_check,
+                number_ratio_domain, number_ratio_subdomain, repeated_domain_check, repeated_path_check, repeated_url_check,
+                longest_repeated_chain, ip_domain, suspicious_key_domain, suspicious_key_subdomain, suspicious_key_path,
+                suspicious_key_query, shortened, has_uuid_path, download_param, free_host,free_host_download]
+
+    return features
 
 
 
@@ -376,6 +395,6 @@ domain_test = 'http://babal.net/downloads_details/497/%D9%83%D8%A7%D8%B8%D9%85-%
 domain_test_1 = 'paypal.com'
 path = r'C:\Users\AD\Downloads\domain1.txt'
 parts1 = extract_url(domain_test)
-print(parts1)
-print(has_download_param(parts1))
-print(_is_uuid_path(parts1))
+preprocessed_list = load_and_preprocess_whitelist(path)
+features = features_extraction(domain_test, preprocessed_list)
+print(features)
