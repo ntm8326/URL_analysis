@@ -39,8 +39,27 @@ SUSPICIOUS_KEYWORDS = {
     # webmail
     'webmail', 'outlook', 'office365', 'cpanel',
 }
+SUSPICIOUS_TLDS = {
+    'tk', 'ml', 'ga', 'cf', 'gq', 'xyz', 'top', 'click', 'link',
+    'win', 'download', 'racing', 'vip', 'club', 'online', 'site',
+    'live', 'fun', 'space', 'pw', 'christmas', 'cyou', 'rest',
+    'icu', 'cfd', 'hair', 'makeup', 'monster', 'quest', 'skin',
+}
+SHORTENERS = {
+    'bit.ly', 'goo.gl', 'tinyurl.com', 't.co', 'ow.ly', 'is.gd',
+    'cutt.ly', 'rebrand.ly', 'bit.do', 'v.gd', 'short.to', 'tiny.cc'
+}
+FREE_HOSTING = {
+    'vercel.app', 'netlify.app', 'github.io', 'glitch.me',
+    'replit.dev', 'repl.co', '000webhostapp.com', 'web.app',
+    'firebaseapp.com', 'pages.dev', 'surge.sh', 'onrender.com',
+    'railway.app', 'fly.dev', 'cyclic.app'
+}
+PROTOCOLS = {'HTTP', 'HTTPS', 'FTP', 'FTPS'}
+PORTS = {80, 443, 8080, 21}
 url_structure = [SCHEME, NETLOC, PATH, QUERY, FRAGMENT]
-
+def url_length(url : str) -> int:
+    return len(url)
 def fully_decode(data : str) -> str:
     if not data:
         return ""
@@ -102,43 +121,53 @@ def digit_ratio(data : str) -> float:
     if not data:
         return 0.0
     return sum(c.isdigit() for c in data) / len(data)
-def dot_count(data : str) -> int:
-    if not data:
+def dot_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '.')
-def hyphen_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '.')
+def hyphen_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '-')
-def hash_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '-')
+def hash_count(parts :  list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '#')
-def percent_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '#')
+def percent_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '%')
-def slash_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '%')
+def slash_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '/')
-def at_sign_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '/')
+def at_sign_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '@')
-def ampersand_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '@')
+def ampersand_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '&')
-def equal_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '&')
+def equal_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    return sum(1 for c in data if c == '=')
-def strange_char_count(data : str) -> int:
-    if not data:
+    return sum(1 for c in parts[index] if c == '=')
+def question_count(parts : list, index : int) -> int:
+    if not parts[index]:
         return 0
-    valid_pattern = r'[^a-zA-Z0-9\-\._~:/\?#\[\]@!\$&\'\(\)\*\+,;=%]'
-    strange_chars = re.findall(valid_pattern, data)
+    return sum(1 for c in parts[index] if c == '?')
+
+
+STRANGE_CHAR_PATTERN = re.compile(r'[^a-zA-Z0-9\-\._~:/\?#\[\]@!\$&\'\(\)\*\+,;=%]')
+
+def strange_char_count(data: list, index: int) -> int:
+    if not data or index >= len(data):
+        return 0
+    part = data[index]
+    if not part:
+        return 0
+    strange_chars = STRANGE_CHAR_PATTERN.findall(part)
     return len(strange_chars)
 def is_ip(data : str) -> int:
     try:
@@ -146,10 +175,8 @@ def is_ip(data : str) -> int:
         return 1
     except ValueError:
         return 0
-def levenshtein(data : str, file_whitelist : str) -> dict:
-    threshold = max(1, floor(len(data)/7))
-    highest_score = 0
-    most_similar_domain = ""
+def load_and_preprocess_whitelist(file_whitelist : str) -> list:
+    processed_list = []
     try:
         with open(file_whitelist, 'r', encoding = 'utf-8') as file:
             for line in file:
@@ -158,25 +185,29 @@ def levenshtein(data : str, file_whitelist : str) -> dict:
                     continue
                 extracted = extract_url(check_domain)
                 host_domain = f"{extracted[DOMAIN]}.{extracted[SUFFIX]}"
-                len_diff = abs(len(data) - len(host_domain))
-                if len_diff > threshold:
-                    continue
-                distain = Levenshtein.distance(data, host_domain, score_cutoff = threshold)
-                if distain <= threshold:
-                    current_score = Levenshtein.normalized_similarity(data, host_domain)
-                    if current_score > highest_score:
-                        highest_score = current_score
-                        most_similar_domain = host_domain
-
-        return {
-            "normalized similarity": highest_score,
-            "domain": most_similar_domain
-        }
+                processed_list.append(host_domain)
     except FileNotFoundError:
-        return {
-            "normalized similarity": 0.0,
-            "domain": ""
-        }
+        print("File not found")
+    return list(set(processed_list))
+def levenshtein(data : str, preprocessed_list : list) -> dict:
+    threshold = max(1, floor(len(data) / 7))
+    highest_score = 0
+    most_similar_domain = ""
+    data_len = len(data)
+    for host_domain in preprocessed_list:
+        len_diff = abs(data_len - len(host_domain))
+        if len_diff > threshold:
+            continue
+        dist = Levenshtein.distance(data, host_domain, score_cutoff=threshold)
+        if dist <= threshold:
+            current_score = Levenshtein.normalized_similarity(data, host_domain)
+            if current_score > highest_score:
+                highest_score = current_score
+                most_similar_domain = host_domain
+    return {
+        "normalized_similarity": highest_score,
+        "domain": most_similar_domain
+    }
 def part_count(extracted : list) -> int:
     count = 0
     for part in url_structure:
@@ -214,5 +245,156 @@ def max_consecutive_char(data : str) -> int:
         else:
             current_consecutive = 1
     return max_consecutive
+#moi add 30/5
+def _is_uuid_path(data: list) -> int:
+    """Phát hiện path chứa UUID (dấu hiệu C2 server / malware callback).
+    Ví dụ: /ba1019ee-a048-4bd5-a90d-1fc5da2b8696
+    """
+    uuid_pattern = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+    return 1 if re.search(uuid_pattern, data[PATH].lower()) else 0
+def is_shortened(data : list) -> int:
+    if not data[DOMAIN] or not data[SUFFIX]:
+        return 0
+    host_domain = data[DOMAIN]+'.'+data[SUFFIX]
+    if host_domain in SHORTENERS or data[DOMAIN] in SHORTENERS:
+        return 1
+    return 0
+def has_download_param(data : list) -> int:
+    if not data:
+        return 0
+    if len(data[PATH]) > 7 or len(data[QUERY]) > 7:
+        if ('download' in data[QUERY].lower() or
+            'download' in data[PATH].lower() or
+            'install' in data[PATH].lower()):
+            return 1
+    return 0
+def has_suspicious_port(data : list) -> int:
+    if not data[PORT]:
+        return 0
+    if data[PORT] not in PORTS:
+        return 1
+    return 0
+def is_free_hosting(data : list) -> int:
+    if not data:
+        return 0
+    for h in FREE_HOSTING:
+        if data[DOMAIN].endswith(h):
+            return 1
+    return 0
+def free_hosting_download(data : list) -> int:
+    if is_free_hosting(data) and has_download_param(data):
+        return 1
+    return 0
+def has_unicode(data : list) -> int:
+    if not data:
+        return 0
+    host_domain = data[DOMAIN]+'.'+data[SUFFIX]
+    if any(ord(c) > 127 for c in host_domain):
+        return 1
+    return 0
+def has_punycode(data : list) -> int:
+    if not data:
+        return 0
+    host_domain = data[DOMAIN]+'.'+data[SUFFIX]
+    if "xn--" in host_domain:
+        return 1
+    return 0
+def features_extraction(url : str, whitelist : list) -> list:
+    if not url:
+        return []
+    extracted = extract_url(url)
+    domain = extracted[DOMAIN]+'.'+extracted[SUFFIX]
+    #nhóm 1: part có tồn tại hay không
+    number_of_part = part_count(extracted)
+    has_scheme = has_part(extracted, SCHEME)
+    has_netloc = has_part(extracted, NETLOC)
+    has_path = has_part(extracted, PATH)
+    has_params = has_part(extracted, PARAMS)
+    has_query = has_part(extracted, QUERY)
+    has_fragment = has_part(extracted, FRAGMENT)
+    has_username = has_part(extracted, USERNAME)
+    has_password = has_part(extracted, PASSWORD)
+    has_port = has_part(extracted, PORT)
+    has_subdomain = has_part(extracted, SUBDOMAIN)
+    has_domain = has_part(extracted, DOMAIN)
+    has_suffix = has_part(extracted, SUFFIX)
+
+    #nhóm 2:parts length
+    netloc_length = part_length(extracted, NETLOC)
+    path_length = part_length(extracted, PATH)
+    query_length = part_length(extracted, QUERY)
+    fragment_length = part_length(extracted, FRAGMENT)
+    subdomain_length = part_length(extracted, SUBDOMAIN)
+    domain_length = part_length(extracted, DOMAIN)
+
+    # nhom 3: entropy
+    url_entropy = Shannon_entropy(url)
+    netloc_entropy = part_entropy(extracted, NETLOC)
+    path_entropy = part_entropy(extracted, PATH)
+    query_entropy = part_entropy(extracted, QUERY)
+    subdomain_entropy = part_entropy(extracted, SUBDOMAIN)
+    domain_entropy = part_entropy(extracted, DOMAIN)
+
+    #nhom 4: ky tu dac biet
+    number_of_subdomain = dot_count(extracted, SUBDOMAIN)
+    hyphen_in_subdomain = hyphen_count(extracted, SUBDOMAIN)
+    hyphen_in_domain = hyphen_count(extracted, DOMAIN)
+    unicode = has_unicode(extracted)
+    punycode = has_punycode(extracted)
+    at_sign_in_netloc = at_sign_count(extracted, NETLOC)
+    slash_in_path = slash_count(extracted, PATH)
+    dot_in_path = dot_count(extracted, PATH)
+    strange_in_query = strange_char_count(extracted, QUERY)
+    equal_in_query = equal_count(extracted, QUERY)
+    ampersand_in_query = ampersand_count(extracted, QUERY)
 
 
+    #nhom 5: lexical/string
+    normalized_levenshtein_domain = levenshtein(domain, whitelist).get("normalized_similarity")
+    normalized_levenshtein_subdomain = levenshtein(extracted[SUBDOMAIN], whitelist).get("normalized_similarity")
+    random_domain_check = consonant_ratio(extracted[DOMAIN])
+    random_subdomain_check = consonant_ratio(extracted[SUBDOMAIN])
+    number_ratio_domain = digit_ratio(extracted[DOMAIN])
+    number_ratio_subdomain = digit_ratio(extracted[SUBDOMAIN])
+    repeated_domain_check = char_repeated_ratio(extracted[DOMAIN])
+    repeated_path_check = char_repeated_ratio(extracted[PATH])
+    repeated_url_check = char_repeated_ratio(url)
+    longest_repeated_chain = max_consecutive_char(url)
+    ip_domain = is_ip(extracted[DOMAIN])
+    suspicious_key_domain = has_suspicious_keyword(extracted[DOMAIN])
+    suspicious_key_subdomain = has_suspicious_keyword((extracted[SUBDOMAIN]))
+    suspicious_key_path = has_suspicious_keyword(extracted[PATH])
+    suspicious_key_query = has_suspicious_keyword(extracted[QUERY])
+    shortened = is_shortened(extracted)
+
+
+    #nhom 6: nhom con lai
+    has_uuid_path = _is_uuid_path(extracted)
+    download_param = has_download_param(extracted)
+    free_host = is_free_hosting(extracted)
+    free_host_download = free_hosting_download(extracted)
+
+    features = [number_of_part, has_scheme, has_netloc, has_path, has_params, has_query, has_fragment,
+                has_username, has_password, has_port, has_subdomain, has_domain, has_suffix,
+                netloc_length, path_length, query_length, fragment_length, subdomain_length, domain_length,
+                url_entropy, netloc_entropy, path_entropy, query_entropy, subdomain_entropy, domain_entropy,
+                number_of_subdomain, hyphen_in_subdomain, hyphen_in_domain, unicode, punycode, at_sign_in_netloc,
+                slash_in_path, dot_in_path, strange_in_query, equal_in_query, ampersand_in_query,
+                normalized_levenshtein_domain, normalized_levenshtein_subdomain, random_domain_check, random_subdomain_check,
+                number_ratio_domain, number_ratio_subdomain, repeated_domain_check, repeated_path_check, repeated_url_check,
+                longest_repeated_chain, ip_domain, suspicious_key_domain, suspicious_key_subdomain, suspicious_key_path,
+                suspicious_key_query, shortened, has_uuid_path, download_param, free_host,free_host_download]
+
+    return features
+
+
+
+
+
+domain_test = 'http://babal.net/downloads_details/497/%D9%83%D8%A7%D8%B8%D9%85-%D8%A7%D9%84%D8%B3%D8%A7%D9%87%D8%B1---%D8%A7%D9%86%D8%AA-%D8%A7%D9%84%D8%AE%D8%A7%D8%B3%D8%B1'
+domain_test_1 = 'paypal.com'
+path = r'C:\Users\AD\Downloads\domain1.txt'
+parts1 = extract_url(domain_test)
+preprocessed_list = load_and_preprocess_whitelist(path)
+features = features_extraction(domain_test, preprocessed_list)
+print(features)
