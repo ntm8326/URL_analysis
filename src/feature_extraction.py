@@ -80,8 +80,18 @@ def extract_url(url : str) -> list:
     url = str(url).strip()
     normalized = normalize_url(url)
     extracted = tldextract.extract(normalized)
-    parsed = urlparse(normalized)
-    scheme = urlparse(url).scheme if '://' in url else ''
+    try:
+        parsed = urlparse(normalized)
+        scheme = urlparse(url).scheme if '://' in url else ''
+    except ValueError:
+        from urllib.parse import ParseResult
+        parsed = ParseResult('', '', '', '', '', '')
+        scheme = ''
+
+    try:
+        port_number = parsed.port
+    except ValueError:
+        port_number = None
     decoded_username = fully_decode(parsed.username)
     decoded_password = fully_decode(parsed.password)
     decoded_path = fully_decode(parsed.path)
@@ -92,7 +102,7 @@ def extract_url(url : str) -> list:
              parsed.netloc,
              decoded_username,
              decoded_password,
-             parsed.port,
+             port_number,
              extracted.subdomain,
              extracted.domain,
              extracted.suffix,
@@ -299,6 +309,12 @@ def has_punycode(data : list) -> int:
     if "xn--" in host_domain:
         return 1
     return 0
+def suspicious_tld(data : list) -> int:
+    if not data[SUFFIX]:
+        return 0
+    if data[SUFFIX] in SUSPICIOUS_TLDS:
+        return 1
+    return 0
 def features_extraction(url : str, whitelist : list) -> list:
     if not url:
         return []
@@ -373,6 +389,7 @@ def features_extraction(url : str, whitelist : list) -> list:
     download_param = has_download_param(extracted)
     free_host = is_free_hosting(extracted)
     free_host_download = free_hosting_download(extracted)
+    suspicious_suffix = suspicious_tld(extracted)
 
     features = [number_of_part, has_scheme, has_netloc, has_path, has_params, has_query, has_fragment,
                 has_username, has_password, has_port, has_subdomain, has_domain, has_suffix,
@@ -383,18 +400,10 @@ def features_extraction(url : str, whitelist : list) -> list:
                 normalized_levenshtein_domain, normalized_levenshtein_subdomain, random_domain_check, random_subdomain_check,
                 number_ratio_domain, number_ratio_subdomain, repeated_domain_check, repeated_path_check, repeated_url_check,
                 longest_repeated_chain, ip_domain, suspicious_key_domain, suspicious_key_subdomain, suspicious_key_path,
-                suspicious_key_query, shortened, has_uuid_path, download_param, free_host,free_host_download]
+                suspicious_key_query, shortened, has_uuid_path, download_param, free_host,free_host_download, suspicious_suffix]
 
     return features
 
 
-
-
-
-domain_test = 'http://babal.net/downloads_details/497/%D9%83%D8%A7%D8%B8%D9%85-%D8%A7%D9%84%D8%B3%D8%A7%D9%87%D8%B1---%D8%A7%D9%86%D8%AA-%D8%A7%D9%84%D8%AE%D8%A7%D8%B3%D8%B1'
-domain_test_1 = 'paypal.com'
-path = r'C:\Users\AD\Downloads\domain1.txt'
-parts1 = extract_url(domain_test)
-preprocessed_list = load_and_preprocess_whitelist(path)
-features = features_extraction(domain_test, preprocessed_list)
-print(features)
+domain = 'amazon.co.uk'
+print(extract_url(domain))
