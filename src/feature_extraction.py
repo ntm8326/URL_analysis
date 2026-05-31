@@ -386,15 +386,3 @@ def features_extraction(url : str, whitelist : list) -> list:
                 suspicious_key_query, shortened, has_uuid_path, download_param, free_host,free_host_download]
 
     return features
-
-
-
-
-
-domain_test = 'http://babal.net/downloads_details/497/%D9%83%D8%A7%D8%B8%D9%85-%D8%A7%D9%84%D8%B3%D8%A7%D9%87%D8%B1---%D8%A7%D9%86%D8%AA-%D8%A7%D9%84%D8%AE%D8%A7%D8%B3%D8%B1'
-domain_test_1 = 'paypal.com'
-path = r'C:\Users\AD\Downloads\domain1.txt'
-parts1 = extract_url(domain_test)
-preprocessed_list = load_and_preprocess_whitelist(path)
-features = features_extraction(domain_test, preprocessed_list)
-print(features)
