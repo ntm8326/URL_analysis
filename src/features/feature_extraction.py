@@ -315,6 +315,20 @@ def suspicious_tld(data : list) -> int:
     if data[SUFFIX] in SUSPICIOUS_TLDS:
         return 1
     return 0
+def get_scheme(url : str) -> str:
+    extracted = extract_url(url)
+    if not extracted:
+        return ''
+    if extracted[SCHEME] == "https":
+        return "https"
+    elif extracted[SCHEME] == "http":
+        return "http"
+    elif extracted[SCHEME] == "ftp":
+        return "ftp"
+    elif extracted[SCHEME] == '':
+        return ''
+    else:
+        return "other"
 def features_extraction(url : str, whitelist : list) -> list:
     if not url:
         return []
@@ -405,5 +419,3 @@ def features_extraction(url : str, whitelist : list) -> list:
     return features
 
 
-domain = 'amazon.co.uk'
-print(extract_url(domain))
