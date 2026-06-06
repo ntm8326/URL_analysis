@@ -3,7 +3,7 @@
 *.tsv
 *.xlsx
 *.json
-data/
+src/data/
 datasets/
 
 
