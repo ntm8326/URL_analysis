@@ -377,6 +377,7 @@ def features_extraction(url : str, whitelist : list) -> list:
     strange_in_query = strange_char_count(extracted, QUERY)
     equal_in_query = equal_count(extracted, QUERY)
     ampersand_in_query = ampersand_count(extracted, QUERY)
+    number_subdomain = dot_count(extracted, SUBDOMAIN)+1
 
 
     #nhom 5: lexical/string
@@ -410,7 +411,7 @@ def features_extraction(url : str, whitelist : list) -> list:
                 netloc_length, path_length, query_length, fragment_length, subdomain_length, domain_length,
                 url_entropy, netloc_entropy, path_entropy, query_entropy, subdomain_entropy, domain_entropy,
                 number_of_subdomain, hyphen_in_subdomain, hyphen_in_domain, unicode, punycode, at_sign_in_netloc,
-                slash_in_path, dot_in_path, strange_in_query, equal_in_query, ampersand_in_query,
+                slash_in_path, dot_in_path, strange_in_query, equal_in_query, ampersand_in_query, number_subdomain,
                 normalized_levenshtein_domain, normalized_levenshtein_subdomain, random_domain_check, random_subdomain_check,
                 number_ratio_domain, number_ratio_subdomain, repeated_domain_check, repeated_path_check, repeated_url_check,
                 longest_repeated_chain, ip_domain, suspicious_key_domain, suspicious_key_subdomain, suspicious_key_path,
