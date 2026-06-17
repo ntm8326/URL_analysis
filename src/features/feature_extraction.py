@@ -377,7 +377,7 @@ def features_extraction(url : str, whitelist : list) -> list:
     strange_in_query = strange_char_count(extracted, QUERY)
     equal_in_query = equal_count(extracted, QUERY)
     ampersand_in_query = ampersand_count(extracted, QUERY)
-    number_subdomain = dot_count(extracted, SUBDOMAIN)+1
+    number_subdomain = dot_count(extracted, SUBDOMAIN)+1 if extracted[SUBDOMAIN] else 0
 
 
     #nhom 5: lexical/string
