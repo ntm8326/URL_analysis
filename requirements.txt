@@ -2,8 +2,7 @@ pandas
 scikit-learn
 jupyter
 tldextract
-urllib
-parse
 rapidfuzz
 lightgbm
 numpy
+matplotlib
