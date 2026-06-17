@@ -366,7 +366,6 @@ def features_extraction(url : str, whitelist : list) -> list:
     domain_entropy = part_entropy(extracted, DOMAIN)
 
     #nhom 4: ky tu dac biet
-    number_of_subdomain = dot_count(extracted, SUBDOMAIN)
     hyphen_in_subdomain = hyphen_count(extracted, SUBDOMAIN)
     hyphen_in_domain = hyphen_count(extracted, DOMAIN)
     unicode = has_unicode(extracted)
@@ -410,7 +409,7 @@ def features_extraction(url : str, whitelist : list) -> list:
                 has_username, has_password, has_port, has_subdomain, has_domain, has_suffix,
                 netloc_length, path_length, query_length, fragment_length, subdomain_length, domain_length,
                 url_entropy, netloc_entropy, path_entropy, query_entropy, subdomain_entropy, domain_entropy,
-                number_of_subdomain, hyphen_in_subdomain, hyphen_in_domain, unicode, punycode, at_sign_in_netloc,
+                hyphen_in_subdomain, hyphen_in_domain, unicode, punycode, at_sign_in_netloc,
                 slash_in_path, dot_in_path, strange_in_query, equal_in_query, ampersand_in_query, number_subdomain,
                 normalized_levenshtein_domain, normalized_levenshtein_subdomain, random_domain_check, random_subdomain_check,
                 number_ratio_domain, number_ratio_subdomain, repeated_domain_check, repeated_path_check, repeated_url_check,
