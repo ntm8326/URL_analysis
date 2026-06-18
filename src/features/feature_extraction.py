@@ -334,6 +334,15 @@ def features_extraction(url : str, whitelist : list) -> list:
         return []
     extracted = extract_url(url)
     domain = extracted[DOMAIN]+'.'+extracted[SUFFIX]
+    #nhom 0: ten tung part
+    scheme = extracted[SCHEME]
+    netloc = extracted[NETLOC]
+    path = extracted[PATH]
+    query = extracted[QUERY]
+    fragment = extracted[FRAGMENT]
+    subdomain = extracted[SUBDOMAIN]
+    domain = extracted[DOMAIN]
+
     #nhóm 1: part có tồn tại hay không
     number_of_part = part_count(extracted)
     has_scheme = has_part(extracted, SCHEME)
@@ -405,7 +414,8 @@ def features_extraction(url : str, whitelist : list) -> list:
     free_host_download = free_hosting_download(extracted)
     suspicious_suffix = suspicious_tld(extracted)
 
-    features = [number_of_part, has_scheme, has_netloc, has_path, has_params, has_query, has_fragment,
+    features = [scheme, netloc, path, query, fragment, subdomain, domain,
+                number_of_part, has_scheme, has_netloc, has_path, has_params, has_query, has_fragment,
                 has_username, has_password, has_port, has_subdomain, has_domain, has_suffix,
                 netloc_length, path_length, query_length, fragment_length, subdomain_length, domain_length,
                 url_entropy, netloc_entropy, path_entropy, query_entropy, subdomain_entropy, domain_entropy,
