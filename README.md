@@ -122,15 +122,15 @@ python "test/take url and return result.py"
 ### Kết quả mẫu
 
 ```
-URL: https://google.com
+URL: https://87khq5gx.ravabetensani.site/?ublib=ca0a10e1-15b1-489c-a27f-7703d460170c
 
 ----------------------------------------
-  benign         :  98.72%
-  phishing       :   0.85%
-  defacement     :   0.28%
-  malware        :   0.15%
+  malware         :  98.07%
+  phishing        :   1.91%
+  benign          :   0.01%
+  defacement      :   0.00%
 ----------------------------------------
-=> Dự đoán: 'benign' (98.72%)
+=> Dự đoán: 'malware' (98.07%)
 ```
 
 ---
