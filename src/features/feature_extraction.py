@@ -333,7 +333,7 @@ def features_extraction(url : str, whitelist : list) -> list:
     if not url:
         return []
     extracted = extract_url(url)
-    domain = extracted[DOMAIN]+'.'+extracted[SUFFIX]
+    host_domain = extracted[DOMAIN]+'.'+extracted[SUFFIX]
     #nhom 0: ten tung part
     scheme = extracted[SCHEME]
     netloc = extracted[NETLOC]
@@ -389,7 +389,7 @@ def features_extraction(url : str, whitelist : list) -> list:
 
 
     #nhom 5: lexical/string
-    normalized_levenshtein_domain = levenshtein(domain, whitelist).get("normalized_similarity")
+    normalized_levenshtein_domain = levenshtein(host_domain, whitelist).get("normalized_similarity")
     normalized_levenshtein_subdomain = levenshtein(extracted[SUBDOMAIN], whitelist).get("normalized_similarity")
     random_domain_check = consonant_ratio(extracted[DOMAIN])
     random_subdomain_check = consonant_ratio(extracted[SUBDOMAIN])
