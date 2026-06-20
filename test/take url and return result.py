@@ -13,7 +13,6 @@ METADATA_PATH = r'G:\url-analysis\notebooks\lgb_url_classifier_metadata.json'
 WHITELIST_PATH = r'G:\url-analysis\src\data\whitelist.txt'
 
 def load_artifacts():
-    """Load model, label encoder, danh sách tên cột (features), và whitelist."""
     booster = lgb.Booster(model_file=MODEL_PATH)
 
     le = joblib.load(LABEL_PATH)
@@ -62,10 +61,10 @@ def url_to_feature_row(url: str, feature_columns: list, whitelist: list) -> pd.D
     # Loại các cột text thô đã bị drop lúc train (trong RAW_TEXT_COLUMNS)
     row_dict = {k: v for k, v in row_dict.items() if k not in RAW_TEXT_COLUMNS}
 
-    # --- Thêm url_length (không có trong wrapper features_extraction) ---
+    # Thêm url_length (không có trong wrapper features_extraction)
     row_dict["url length"] = len(url)
 
-    # --- One-hot encode scheme (không có trong wrapper features_extraction) ---
+    #One-hot encode scheme (không có trong wrapper features_extraction)
     scheme_value = get_scheme(url)  # trả về: "https", "http", "ftp", "", hoặc "other"
     row_dict["is_https"] = 1 if scheme_value == "https" else 0
     row_dict["is_http"]  = 1 if scheme_value == "http"  else 0
