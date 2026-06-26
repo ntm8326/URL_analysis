@@ -5,13 +5,14 @@ import numpy as np
 import pandas as pd
 import lightgbm as lgb
 from src.features.feature_extraction import features_extraction, load_and_preprocess_whitelist, get_scheme
-from src.FIlter.Normalize_url import normalize_input_url
 
-MODEL_PATH = r'G:\url-analysis\notebooks\lgb_url_classifier.txt'
-LABEL_PATH = r'G:\url-analysis\notebooks\label_encoder.joblib'
-METADATA_PATH = r'G:\url-analysis\notebooks\lgb_url_classifier_metadata.json'
-WHITELIST_PATH = r'G:\url-analysis\src\data\whitelist.txt'
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+MODEL_PATH = os.path.join(BASE_DIR, 'notebooks', 'Save', 'lgb_url_classifier.txt')
+LABEL_PATH = os.path.join(BASE_DIR, 'notebooks', 'Save', 'label_encoder.joblib')
+METADATA_PATH = os.path.join(BASE_DIR, 'notebooks', 'Save', 'lgb_url_classifier_metadata.json')
+WHITELIST_PATH = os.path.join(BASE_DIR, 'src', 'data', 'whitelist.txt')
 def load_artifacts():
     booster = lgb.Booster(model_file=MODEL_PATH)
 
@@ -100,7 +101,6 @@ def main():
     else:
         url = input("Nhập URL cần kiểm tra: ").strip()
 
-    url = normalize_input_url(url) #normalized url
     result = predict_url(url, booster, le, feature_columns, whitelist)
 
     sorted_result = sorted(result.items(), key=lambda x: x[1], reverse=True)
