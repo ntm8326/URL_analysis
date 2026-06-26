@@ -1,4 +1,4 @@
-# 🔍 URL Analysis Tool
+# 🔍 Malicious URL Detector Tool
 
 Công cụ phân loại URL độc hại dựa trên **phân tích tĩnh đặc trưng lexical** (Static Lexical Analysis) kết hợp mô hình **LightGBM (Gradient Boosted Decision Trees)**. Hệ thống phân loại URL thành **4 nhóm**: `benign`, `phishing`, `malware`, và `defacement` — hoàn toàn dựa trên cấu trúc chuỗi URL mà **không cần truy cập nội dung trang web**.
 
@@ -45,7 +45,7 @@ url-analysis/
 │       ├── processed_url_update.csv# Dataset đã tiền xử lý
 │       └── domain.txt              # Danh sách domain
 │
-├── notebooks/                      # Jupyter Notebooks & model artifacts
+├── notebooks/        # Jupyter Notebooks & model artifacts
 │   ├── data_exploration.ipynb      # Khám phá & phân tích dữ liệu
 │   ├── test.ipynb                  # Notebook thử nghiệm
 │   ├── test_model.ipynb            # Đánh giá & kiểm thử mô hình
@@ -78,12 +78,6 @@ url-analysis/
 - Python 3.8+
 - Windows / Linux / macOS
 
-### Cài đặt thư viện
-
-```bash
-pip install -r requirements.txt
-```
-
 Các thư viện chính:
 
 | Thư viện | Mục đích |
@@ -96,12 +90,6 @@ Các thư viện chính:
 | `rapidfuzz` | Tính khoảng cách Levenshtein (phát hiện typosquatting) |
 | `matplotlib` | Trực quan hóa dữ liệu |
 | `jupyter` | Chạy notebooks phân tích |
-
-### Cài đặt package nguồn
-
-```bash
-pip install -e .
-```
 
 ---
 
